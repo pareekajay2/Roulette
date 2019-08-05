@@ -45,9 +45,9 @@ def create_feedback_table():
 
 
 def get_top_5_products(persona):
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
     if persona != "all":
-        conn = sqlite3.connect(DB)
-        cur = conn.cursor()
         cur.execute("""
         select product_name as product, sum(rating)/count(rating) as avg_rating
         from products p
@@ -58,12 +58,8 @@ def get_top_5_products(persona):
         order by 2 desc
         limit 5
         """%(persona))
-        dataframe = pd.DataFrame(cur.fetchall())
-        print(dataframe)
 
     else:
-        conn = sqlite3.connect(DB)
-        cur = conn.cursor()
         cur.execute("""
                 select product_name as product, sum(rating)/count(rating) as avg_rating
                 from products p
@@ -73,8 +69,21 @@ def get_top_5_products(persona):
                 order by 2 desc
                 limit 5
                 """ )
+
+    dataframe = pd.DataFrame(cur.fetchall())
+
+    if len(dataframe) == 0:
+        cur.execute("""
+        select product_name as product, sum(rating)/count(rating) as avg_rating
+        from products p
+        inner join feedbacks fb
+        on fb.product_id = p.id
+        group by 1
+        order by 2 desc
+        limit 5
+        """)
         dataframe = pd.DataFrame(cur.fetchall())
-        print(dataframe)
+    print(dataframe)
 
 
 def insert_users(id, persona, username, password, created_at, updated_at):
